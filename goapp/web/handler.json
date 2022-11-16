@@ -1,0 +1,32 @@
+{
+  "Name": "go-app starter",
+  "ShortName": "starter",
+  "Icon": {
+    "Default": "/web/logo-192.png",
+    "Large": "/web/logo-512.png",
+    "AppleTouch": "/web/logo-192.png"
+  },
+  "BackgroundColor": "#222",
+  "ThemeColor": "#000",
+  "LoadingLabel": "",
+  "Lang": "",
+  "Title": "go-app starter",
+  "Description": "",
+  "Author": "TODO",
+  "Keywords": [],
+  "Image": "",
+  "Styles": [
+    "/web/style.css"
+  ],
+  "Scripts": [],
+  "CacheableResources": [],
+  "RawHeaders": [],
+  "AutoUpdateInterval": 0,
+  "Env": {
+    "SAMPLE_ENV_KEY": "SAMPLE_ENV_VALUE"
+  },
+  "InternalURLs": [],
+  "ProxyResources": [],
+  "Version": "",
+  "WasmContentLengthHeader": ""
+}
