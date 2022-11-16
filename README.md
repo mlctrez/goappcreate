@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Creates a minimal [go-app](https://go-app.dev/) project structure to bootstrap new projects or experiments.
+Creates a minimal [go-app](https://go-app.dev/) project structure to bootstrap new projects or experiments with:
 
 * A Makefile supporting all the build steps required to run a go-app.
 * The application version is backed by reading the tag and hash from git.
@@ -24,11 +24,12 @@ Creates a minimal [go-app](https://go-app.dev/) project structure to bootstrap n
 
 ## Usage
 
-* Create a go project configured `go mod init <modulePath>`
+* Create a go project with modules `go mod init <modulePath>`
 * Initialize a git repository
 * Install using `go install github.com/mlctrez/goappcreate@v0.9.0`
 * Execute `goappcreate` in the project folder.
-  * There is only one option, `-dark`, to pull in a modified version of app.css so the loading screen does not flash white.
+  * There is only one option, `-dark`, to use a modified version of `app.css` which overrides the color scheme on the
+    loading screen.
 * Install dependencies using `go mod tidy`
 * Run `make` with no arguments to start the server in dev mode.
 
