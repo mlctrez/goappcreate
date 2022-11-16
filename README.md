@@ -1,6 +1,8 @@
 # goappcreate
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/mlctrez/goappcreate)](https://goreportcard.com/report/github.com/mlctrez/goappcreate)
+<p align="center">
+  <img width="192" height="192" src="https://github.com/mlctrez/goappcreate/blob/master/goapp/web/logo-192.png?raw=true">
+</p>
 
 ## Purpose
 
@@ -29,5 +31,7 @@ Creates a minimal [go-app](https://go-app.dev/) project structure to bootstrap n
   * There is only one option, `-dark`, to pull in a modified version of app.css so the loading screen does not flash white.
 * Install dependencies using `go mod tidy`
 * Run `make` with no arguments to start the server in dev mode.
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/mlctrez/goappcreate)](https://goreportcard.com/report/github.com/mlctrez/goappcreate)
 
 created by [tigwen](https://github.com/mlctrez/tigwen)
