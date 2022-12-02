@@ -4,7 +4,7 @@ APP_NAME=goapp
 VERSION=$(shell git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.0")
 COMMIT=$(shell git rev-parse --short HEAD || echo "HEAD")
 MODULE=$(shell grep ^module go.mod | awk '{print $$2;}')
-LD_FLAGS="-w -X $(MODULE)/server.Version=$(VERSION) -X $(MODULE)/server.Commit=$(COMMIT)"
+LD_FLAGS="-w -X $(MODULE)/goapp.Version=$(VERSION) -X $(MODULE)/goapp.Commit=$(COMMIT)"
 MAIN="goapp/service/main/main.go"
 
 run: binary
