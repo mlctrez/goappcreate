@@ -2,7 +2,6 @@ package compo
 
 import (
 	"github.com/maxence-charriere/go-app/v9/pkg/app"
-	"github.com/mlctrez/goappcreate/goapp"
 )
 
 var _ app.AppUpdater = (*Root)(nil)
@@ -13,11 +12,11 @@ type Root struct {
 }
 
 func (r *Root) Render() app.UI {
-	return app.Div().Text(goapp.RuntimeVersion())
+	return app.Div().Text(app.Getenv("GOAPP_VERSION"))
 }
 
 func (r *Root) OnAppUpdate(ctx app.Context) {
-	if goapp.IsDevelopment() && ctx.AppUpdateAvailable() {
+	if app.Getenv("DEV") != "" && ctx.AppUpdateAvailable() {
 		ctx.Reload()
 	}
 }

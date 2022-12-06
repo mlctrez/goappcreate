@@ -29,6 +29,9 @@ func Entry() {
 
 var _ servicego.Service = (*Service)(nil)
 
+var DevEnv = os.Getenv("DEV")
+var IsDev = DevEnv != ""
+
 type Service struct {
 	servicego.Defaults
 	serverShutdown func(ctx context.Context) error
@@ -41,22 +44,21 @@ func (s *Service) Start(_ service.Service) (err error) {
 	if listener, err = net.Listen("tcp4", address); err != nil {
 		return
 	}
-	dev := goapp.IsDevelopment()
+	fmt.Printf("listening on http://%s\n", address)
 
-	if dev {
-		fmt.Printf("running on http://%s\n", address)
-	} else {
+	var middleware []gin.HandlerFunc
+	if !IsDev {
 		gin.SetMode(gin.ReleaseMode)
+	} else {
+		middleware = append(middleware, gin.Logger())
 	}
+	middleware = append(middleware, gin.Recovery(), brotli.Brotli(brotli.DefaultCompression))
+
 	engine := gin.New()
 	// required for go-app to work correctly
 	engine.RedirectTrailingSlash = false
 
-	if dev {
-		engine.Use(gin.Logger(), gin.Recovery(), brotli.Brotli(brotli.DefaultCompression))
-	} else {
-		engine.Use(gin.Recovery(), brotli.Brotli(brotli.DefaultCompression))
-	}
+	engine.Use(middleware...)
 
 	if err = setupGinStaticHandlers(engine); err != nil {
 		return
@@ -65,7 +67,7 @@ func (s *Service) Start(_ service.Service) (err error) {
 	// other api endpoints can go here
 
 	var handler *app.Handler
-	if handler, err = BuildHandler(); err != nil {
+	if handler, err = buildHandler(); err != nil {
 		return
 	}
 	engine.NoRoute(gin.WrapH(handler))
@@ -149,7 +151,7 @@ func listenAddress() string {
 
 }
 
-func BuildHandler() (handler *app.Handler, err error) {
+func buildHandler() (handler *app.Handler, err error) {
 
 	var file fs.File
 	if file, err = goapp.WebFs.Open("web/handler.json"); err != nil {
@@ -161,12 +163,17 @@ func BuildHandler() (handler *app.Handler, err error) {
 	if err = json.NewDecoder(file).Decode(handler); err != nil {
 		return
 	}
-	handler.Version = goapp.RuntimeVersion()
-	handler.AutoUpdateInterval = goapp.UpdateInterval()
-	if goapp.IsDevelopment() {
-		handler.Env["DEV"] = "1"
-	}
+
 	handler.WasmContentLengthHeader = "Wasm-Content-Length"
+	handler.Env["DEV"] = os.Getenv("DEV")
+
+	if IsDev {
+		handler.AutoUpdateInterval = time.Second * 3
+		handler.Version = ""
+	} else {
+		handler.AutoUpdateInterval = time.Hour
+		handler.Version = fmt.Sprintf("%s@%s", goapp.Version, goapp.Commit)
+	}
 
 	return
 }
