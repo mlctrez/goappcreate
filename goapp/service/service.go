@@ -46,31 +46,16 @@ func (s *Service) Start(_ service.Service) (err error) {
 	}
 	fmt.Printf("listening on http://%s\n", address)
 
-	var middleware []gin.HandlerFunc
-	if !IsDev {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		middleware = append(middleware, gin.Logger())
-	}
-	middleware = append(middleware, gin.Recovery(), brotli.Brotli(brotli.DefaultCompression))
-
-	engine := gin.New()
-	// required for go-app to work correctly
-	engine.RedirectTrailingSlash = false
-
-	engine.Use(middleware...)
-
-	if err = setupGinStaticHandlers(engine); err != nil {
+	engine := buildGinEngine()
+	if err = setupStaticHandlers(engine); err != nil {
 		return
 	}
-
-	// other api endpoints can go here
-
-	var handler *app.Handler
-	if handler, err = buildHandler(); err != nil {
+	if err = setupApiEndpoints(engine); err != nil {
 		return
 	}
-	engine.NoRoute(gin.WrapH(handler))
+	if err = setupGoAppHandler(engine); err != nil {
+		return
+	}
 
 	server := &http.Server{Handler: engine}
 	s.serverShutdown = server.Shutdown
@@ -90,7 +75,57 @@ func (s *Service) Start(_ service.Service) (err error) {
 	return nil
 }
 
-func setupGinStaticHandlers(engine *gin.Engine) (err error) {
+func (s *Service) Stop(_ service.Service) (err error) {
+	if s.serverShutdown != nil {
+
+		stopContext, cancel := context.WithTimeout(context.Background(), time.Second*2)
+		defer cancel()
+
+		err = s.serverShutdown(stopContext)
+		if errors.Is(err, context.Canceled) {
+			os.Exit(-1)
+		}
+	}
+	_ = s.Log().Info("http.Server.Shutdown success")
+	return
+}
+
+func listenAddress() string {
+	if address := os.Getenv("ADDRESS"); address != "" {
+		return address
+	}
+	if port := os.Getenv("PORT"); port == "" {
+		return "localhost:8080"
+	} else {
+		return "localhost:" + port
+	}
+
+}
+
+func buildGinEngine() (engine *gin.Engine) {
+
+	if !IsDev {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	engine = gin.New()
+
+	// required for go-app to work correctly
+	engine.RedirectTrailingSlash = false
+
+	if IsDev {
+		// omit some common paths to reduce startup logging noise
+		skipPaths := []string{
+			"/app.css", "/app.js", "/app-worker.js", "/manifest.webmanifest", "/wasm_exec.js",
+			"/web/logo-192.png", "/web/logo-512.png", "/web/app.wasm"}
+		engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: skipPaths}))
+	}
+	engine.Use(gin.Recovery(), brotli.Brotli(brotli.DefaultCompression))
+
+	return
+}
+
+func setupStaticHandlers(engine *gin.Engine) (err error) {
 
 	var wasmFile fs.File
 	if wasmFile, err = goapp.WebFs.Open("web/app.wasm"); err != nil {
@@ -124,43 +159,18 @@ func setupGinStaticHandlers(engine *gin.Engine) (err error) {
 	return
 }
 
-func (s *Service) Stop(_ service.Service) (err error) {
-	if s.serverShutdown != nil {
-
-		stopContext, cancel := context.WithTimeout(context.Background(), time.Second*2)
-		defer cancel()
-
-		err = s.serverShutdown(stopContext)
-		if errors.Is(err, context.Canceled) {
-			os.Exit(-1)
-		}
-	}
-	_ = s.Log().Info("http.Server.Shutdown success")
-	return
+func setupApiEndpoints(engine *gin.Engine) error {
+	// setup other api endpoints here
+	return nil
 }
 
-func listenAddress() string {
-	if address := os.Getenv("ADDRESS"); address != "" {
-		return address
-	}
-	if port := os.Getenv("PORT"); port == "" {
-		return "localhost:8080"
-	} else {
-		return "localhost:" + port
-	}
+func setupGoAppHandler(engine *gin.Engine) (err error) {
 
-}
+	var handler *app.Handler
 
-func buildHandler() (handler *app.Handler, err error) {
-
-	var file fs.File
-	if file, err = goapp.WebFs.Open("web/handler.json"); err != nil {
-		return
-	}
-	defer func() { _ = file.Close() }()
-
-	handler = &app.Handler{}
-	if err = json.NewDecoder(file).Decode(handler); err != nil {
+	// if dynamic customization of other app.Handler fields is required,
+	// just build programmatically and skip the goAppHandlerFromJson() call
+	if handler, err = goAppHandlerFromJson(); err != nil {
 		return
 	}
 
@@ -173,6 +183,23 @@ func buildHandler() (handler *app.Handler, err error) {
 	} else {
 		handler.AutoUpdateInterval = time.Hour
 		handler.Version = fmt.Sprintf("%s@%s", goapp.Version, goapp.Commit)
+	}
+
+	engine.NoRoute(gin.WrapH(handler))
+	return nil
+}
+
+func goAppHandlerFromJson() (handler *app.Handler, err error) {
+
+	var file fs.File
+	if file, err = goapp.WebFs.Open("web/handler.json"); err != nil {
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	handler = &app.Handler{}
+	if err = json.NewDecoder(file).Decode(handler); err != nil {
+		return
 	}
 
 	return

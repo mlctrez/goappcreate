@@ -30,7 +30,7 @@ The following features are included:
 * Create a go project with modules - `go mod init <modulePath>`
 * Initialize a git repository to pul the tag and hash information from.
   * This is not required for development, but is highly recommended for other environments. 
-* Install using `go install github.com/mlctrez/goappcreate@v1`
+* Install using `go install github.com/mlctrez/goappcreate@v1.2.1`
 * Execute `goappcreate` in the project folder.
     * There is only one option, `-dark`, to substitute in a dark theme for the loading screen.
 * Install dependencies using `go mod tidy`
