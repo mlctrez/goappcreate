@@ -1,5 +1,8 @@
 # goappcreate
 
+> :warning: Use [goappnew](https://github.com/mlctrez/goappnew) instead.
+
+
 <p align="center">
   <img width="192" height="192" src="https://github.com/mlctrez/goappcreate/blob/master/goapp/web/logo-192.png?raw=true">
 </p>
